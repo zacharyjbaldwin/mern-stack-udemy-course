@@ -1,19 +1,33 @@
-const HttpError = require('../models/http-error.model');
+const axios = require('axios');
 
-const axios = require('axios').default;
+const HttpError = require('../models/http-error');
 
 const API_KEY = 'AIzaSyDn88mPwcnRzwKaVZBMTSvkE4awXUcqcNc';
 
-const getCoordinatesForAddress = async (address) => {
-    const response = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURI(address)}&key=${API_KEY}`);
+async function getCoordsForAddress(address) {
+  // return {
+  //   lat: 40.7484474,
+  //   lng: -73.9871516
+  // };
+  const response = await axios.get(
+    `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+      address
+    )}&key=${API_KEY}`
+  );
 
-    const data = response.data;
-    if (!data || data.status === 'ZERO_RESULTS') {
-        const error = new HttpError('Could not find location for the specified address.', 404);
-        throw error;
-    }
+  const data = response.data;
 
-    return data.results[0].geometry.location;
-};
+  if (!data || data.status === 'ZERO_RESULTS') {
+    const error = new HttpError(
+      'Could not find location for the specified address.',
+      422
+    );
+    throw error;
+  }
 
-module.exports = getCoordinatesForAddress;
+  const coordinates = data.results[0].geometry.location;
+
+  return coordinates;
+}
+
+module.exports = getCoordsForAddress;
