@@ -1,6 +1,7 @@
 const HttpError = require('../models/http-error.model');
 const { v4: uuidv4 } = require('uuid');
 const { validationResult } = require('express-validator');
+const getCoordinatesForAddress = require('../util/location');
 
 let DUMMY_PLACES = [
     {
@@ -36,14 +37,20 @@ module.exports.getPlacesByUserId = (req, res, next) => {
     res.status(200).json({ places });
 };
 
-module.exports.createPlace = (req, res, next) => {
+module.exports.createPlace = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        console.log(errors);
         return next(new HttpError('Bad request.', 400));
     } 
     
-    const { title, description, coordinates, address, creator } = req.body;
+    const { title, description, address, creator } = req.body;
+
+    let coordinates;
+    try {
+        coordinates = await getCoordinatesForAddress(address);
+    } catch (error) {
+        return next(error);
+    }
 
     const createdPlace = {
         id: uuidv4(),
